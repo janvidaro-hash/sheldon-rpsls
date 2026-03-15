@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sheldon Mind Reader: RPSLS</title>
+    <style>
+        body { font-family: system-ui, sans-serif; text-align: center; background: #0f172a; color: #f8fafc; margin: 0; padding: 10px; display: flex; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
+        .box { width: 100%; max-width: 800px; background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.5); box-sizing: border-box; }
+        .score { display: flex; justify-content: space-around; font-size: 2rem; font-weight: 800; color: #38bdf8; }
+        .streak { font-size: 1.2rem; color: #10b981; font-weight: bold; margin: 10px 0 20px; }
+        .streak span { color: #f8fafc; }
+        .flex-center { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        button.btn { padding: 5px; cursor: pointer; border: 2px solid transparent; border-radius: 15px; background: #0f172a; transition: .2s; }
+        button.btn img { width: 100px; height: 100px; border-radius: 10px; display: block; }
+        button.btn:active { transform: scale(0.95); } /* Instant tap feedback */
+        
+        #res { font-size: 1.4rem; font-weight: bold; color: #fbbf24; min-height: 1.5em; margin: 15px 0; }
+        .brain { background: #0f172a; padding: 20px; border-radius: 15px; border: 1px solid #334155; margin-bottom: 25px; }
+        .brain-title { color: #94a3b8; letter-spacing: 2px; font-size: .8rem; margin-bottom: 15px; text-transform: uppercase; }
+        .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; text-align: left;}
+        .lbl { width: 80px; font-size: .9rem; text-transform: uppercase;}
+        .bg { flex-grow: 1; background: #1e293b; height: 12px; border-radius: 6px; overflow: hidden; }
+        .fill { height: 100%; background: #38bdf8; width: 0%; transition: width .3s; }
+        .pct { width: 40px; font-size: .8rem; color: #94a3b8; text-align: right; }
+        
+        .reset { padding: 12px 20px; font-weight: bold; background: 0 0; color: #ef4444; border: 2px solid #ef4444; border-radius: 8px; cursor: pointer; transition: .2s; }
+        .reset:active { background: #ef4444; color: #fff; transform: scale(0.98); }
+
+        /* --- DESKTOP HOVER EFFECTS --- */
+        /* Only apply hover states if the device has a mouse (fixes sticky hover on touchscreens) */
+        @media (hover: hover) {
+            button.btn:hover { background: #334155; transform: translateY(-5px) scale(1.05); border-color: #38bdf8; box-shadow: 0 5px 15px rgba(56,189,248,.4); }
+            .reset:hover { background: #ef4444; color: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(239,68,68,.4); }
+        }
+
+        /* --- MOBILE SCREEN ADJUSTMENTS --- */
+        @media (max-width: 600px) {
+            body { padding: 5px; align-items: flex-start; }
+            .box { padding: 15px; }
+            .score { font-size: 1.5rem; }
+            .streak { font-size: 1rem; margin-bottom: 10px; }
+            #res { font-size: 1.1rem; }
+            
+            /* Shrink buttons so 3 fit on the top row, 2 on the bottom */
+            .flex-center { gap: 8px; margin-bottom: 15px; }
+            button.btn img { width: 65px; height: 65px; border-radius: 8px; }
+            button.btn { padding: 4px; border-radius: 10px; }
+            
+            /* Shrink the brain UI so text doesn't overlap */
+            .brain { padding: 15px; margin-bottom: 15px; }
+            .lbl { width: 65px; font-size: 0.75rem; }
+            .pct { font-size: 0.75rem; width: 35px; }
+            
+            .reset { width: 100%; padding: 15px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <div class="score"><div>YOU: <span id="ps">0</span></div><div>SHELDON: <span id="as">0</span></div></div>
+    <div class="streak">🔥 Streak: <span id="sc">0</span> &nbsp;|&nbsp; 🏆 Best: <span id="ms">0</span></div>
+    
+    <div id="res">Make your move...</div>
+    <audio id="snd" src="bazinga.mp3"></audio>
+
+    <div class="flex-center">
+        <script>
+            const opts = ['rock', 'paper', 'scissors', 'lizard', 'spock'];
+            document.write(opts.map(o => `<button class="btn" onclick="play('${o}')"><img src="${o}.jpg" alt="${o}"></button>`).join(''));
+        </script>
+    </div>
+
+    <div class="brain">
+        <div class="brain-title">Sheldon's Probability Engine</div>
+        <div id="brain-ui"></div>
+    </div>
+    <button class="reset" onclick="reset()">Reset Game & Memory</button>
+</div>
+
+<script>
+    const mem = {};
+    opts.forEach(o => mem[o] = { rock:0, paper:0, scissors:0, lizard:0, spock:0 });
+    
+    const rules = {
+        rock: { beats: ['scissors', 'lizard'], m: 'crushes' },
+        paper: { beats: ['rock', 'spock'], m: 'covers/disproves' },
+        scissors: { beats: ['paper', 'lizard'], m: 'cuts/decapitates' },
+        lizard: { beats: ['spock', 'paper'], m: 'poisons/eats' },
+        spock: { beats: ['scissors', 'rock'], m: 'smashes/vaporizes' }
+    };
+
+    let st = { p: 0, a: 0, s: 0, m: 0, last: null };
+    const el = id => document.getElementById(id);
+    const dom = { ps: el('ps'), as: el('as'), sc: el('sc'), ms: el('ms'), res: el('res'), snd: el('snd') };
+
+    el('brain-ui').innerHTML = opts.map(o => `
+        <div class="row"><div class="lbl">${o}</div>
+        <div class="bg"><div class="fill" id="f-${o}"></div></div>
+        <div class="pct" id="p-${o}">0%</div></div>
+    `).join('');
+
+    function play(p) {
+        let a = (!st.last || Math.random() < 0.1) 
+            ? opts[Math.floor(Math.random() * 5)] 
+            : getCounter(st.last);
+
+        if (st.last) mem[st.last][p]++;
+        st.last = p;
+
+        let msg = "";
+        if (p === a) {
+            msg = `TIE! Both chose ${p.toUpperCase()}.`;
+            st.s = 0;
+        } else if (rules[p].beats.includes(a)) {
+            st.p++; st.s++; 
+            if (st.s > st.m) st.m = st.s;
+            msg = `WIN! ${p.toUpperCase()} ${rules[p].m} ${a.toUpperCase()}.`;
+        } else {
+            st.a++; st.s = 0;
+            msg = `LOSE! ${a.toUpperCase()} ${rules[a].m} ${p.toUpperCase()}.`;
+            if (dom.snd) { dom.snd.currentTime = 0; dom.snd.play().catch(()=>{}); }
+        }
+
+        dom.ps.innerText = st.p; dom.as.innerText = st.a;
+        dom.sc.innerText = st.s; dom.ms.innerText = st.m;
+        dom.res.innerText = msg;
+
+        let tot = Object.values(mem[p]).reduce((x, y) => x + y, 0);
+        opts.forEach(o => {
+            let pct = tot === 0 ? 0 : Math.round((mem[p][o] / tot) * 100);
+            el(`f-${o}`).style.width = `${pct}%`;
+            el(`p-${o}`).innerText = `${pct}%`;
+        });
+    }
+
+    function getCounter(lastMove) {
+        let pData = mem[lastMove];
+        let predicted = Object.keys(pData).reduce((a, b) => pData[a] > pData[b] ? a : b);
+        if (pData[predicted] === 0) return opts[Math.floor(Math.random() * 5)];
+        
+        let counters = opts.filter(c => rules[c].beats.includes(predicted));
+        return counters[Math.floor(Math.random() * counters.length)];
+    }
+
+    function reset() {
+        st = { p: 0, a: 0, s: 0, m: 0, last: null };
+        opts.forEach(o => opts.forEach(n => mem[o][n] = 0));
+        ['ps', 'as', 'sc', 'ms'].forEach(id => el(id).innerText = '0');
+        dom.res.innerText = "Sheldon's memory wiped. Make your move...";
+        opts.forEach(o => { el(`f-${o}`).style.width = '0%'; el(`p-${o}`).innerText = '0%'; });
+    }
+</script>
+
+</body>
+</html>
