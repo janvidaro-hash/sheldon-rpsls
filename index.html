@@ -5,33 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sheldon Mind Reader: RPSLS</title>
     <style>
-        body { font-family: system-ui, sans-serif; text-align: center; background: #0f172a; color: #f8fafc; margin: 0; padding: 10px; display: flex; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
-        .box { width: 100%; max-width: 600px; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.5); box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; text-align: center; background: #0f172a; color: #f8fafc; margin: 0; padding: 10px; display: flex; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; overflow: hidden; }
+        .box { width: 100%; max-width: 600px; background: #1e293b; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.5); z-index: 10; position: relative; }
+        
+        /* FLASH OVERLAY */
+        #flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; opacity: 0; }
+        .flash-win { background: rgba(16, 185, 129, 0.2); animation: flash-anim 0.5s; }
+        .flash-lose { background: rgba(239, 68, 68, 0.2); animation: flash-anim 0.5s; }
+        
+        @keyframes flash-anim {
+            0% { opacity: 0; } 20% { opacity: 1; } 100% { opacity: 0; }
+        }
+
+        /* SHAKE & PULSE ANIMATIONS */
+        .shake { animation: shake-anim 0.4s; }
+        @keyframes shake-anim {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px) rotate(-5deg); }
+            50% { transform: translateX(8px) rotate(5deg); }
+            75% { transform: translateX(-8px) rotate(-5deg); }
+        }
+
+        .pulse { animation: pulse-anim 0.5s; }
+        @keyframes pulse-anim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); box-shadow: 0 0 20px rgba(56, 189, 248, 0.6); }
+            100% { transform: scale(1); }
+        }
+
         .score { display: flex; justify-content: space-around; font-size: 1.8rem; font-weight: 800; color: #38bdf8; }
         .streak { font-size: 1rem; color: #10b981; font-weight: bold; margin: 10px 0; }
-        .streak span { color: #f8fafc; }
         
-        /* BATTLE ZONE STYLES */
-        .battle-zone { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0; min-height: 100px; }
-        .battle-slot { text-align: center; }
-        .battle-slot img { width: 80px; height: 80px; border-radius: 12px; border: 2px solid #334155; background: #0f172a; }
+        .battle-zone { display: flex; justify-content: center; align-items: center; gap: 20px; margin: 15px 0; min-height: 110px; }
+        .battle-slot img { width: 85px; height: 85px; border-radius: 12px; border: 3px solid #334155; background: #0f172a; transition: border-color 0.2s; }
         .vs { font-weight: 900; color: #ef4444; font-size: 1.2rem; }
         .slot-label { font-size: 0.7rem; color: #94a3b8; margin-top: 5px; text-transform: uppercase; }
 
         .flex-center { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         button.btn { padding: 5px; cursor: pointer; border: 2px solid transparent; border-radius: 12px; background: #0f172a; transition: .2s; }
         button.btn img { width: 70px; height: 70px; border-radius: 8px; display: block; }
-        button.btn:active { transform: scale(0.9); }
-
+        
         #res { font-size: 1.2rem; font-weight: bold; color: #fbbf24; min-height: 1.5em; margin-bottom: 15px; }
         .brain { background: #0f172a; padding: 15px; border-radius: 15px; border: 1px solid #334155; margin-bottom: 20px; }
-        .brain-title { color: #94a3b8; letter-spacing: 1px; font-size: .7rem; margin-bottom: 10px; text-transform: uppercase; }
+        .brain-title { color: #94a3b8; font-size: .7rem; margin-bottom: 10px; text-transform: uppercase; }
         .row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; text-align: left;}
         .lbl { width: 70px; font-size: .8rem; text-transform: uppercase;}
         .bg { flex-grow: 1; background: #1e293b; height: 10px; border-radius: 5px; overflow: hidden; }
         .fill { height: 100%; background: #38bdf8; width: 0%; transition: width .3s; }
         .pct { width: 35px; font-size: .75rem; color: #94a3b8; text-align: right; }
-        .reset { padding: 12px; width: 100%; font-weight: bold; background: 0 0; color: #ef4444; border: 2px solid #ef4444; border-radius: 8px; cursor: pointer; transition: .2s; }
+        .reset { padding: 12px; width: 100%; font-weight: bold; background: 0 0; color: #ef4444; border: 2px solid #ef4444; border-radius: 8px; cursor: pointer; }
 
         @media (hover: hover) {
             button.btn:hover { background: #334155; border-color: #38bdf8; }
@@ -41,17 +63,19 @@
 </head>
 <body>
 
+<div id="flash"></div>
+
 <div class="box">
     <div class="score"><div>YOU: <span id="ps">0</span></div><div>SHELDON: <span id="as">0</span></div></div>
     <div class="streak">🔥 Streak: <span id="sc">0</span> &nbsp;|&nbsp; 🏆 Best: <span id="ms">0</span></div>
     
     <div class="battle-zone">
-        <div class="battle-slot">
+        <div class="battle-slot" id="p-slot">
             <img id="p-choice-img" src="rock.jpg" style="opacity: 0.2;">
             <div class="slot-label">YOU</div>
         </div>
         <div class="vs">VS</div>
-        <div class="battle-slot">
+        <div class="battle-slot" id="a-slot">
             <img id="a-choice-img" src="rock.jpg" style="opacity: 0.2;">
             <div class="slot-label">SHELDON</div>
         </div>
@@ -90,8 +114,9 @@
     const el = id => document.getElementById(id);
     const dom = { 
         ps: el('ps'), as: el('as'), sc: el('sc'), ms: el('ms'), 
-        res: el('res'), snd: el('snd'),
-        pImg: el('p-choice-img'), aImg: el('a-choice-img') 
+        res: el('res'), snd: el('snd'), flash: el('flash'),
+        pImg: el('p-choice-img'), aImg: el('a-choice-img'),
+        pSlot: el('p-slot'), aSlot: el('a-slot')
     };
 
     el('brain-ui').innerHTML = opts.map(o => `
@@ -100,12 +125,15 @@
         <div class="pct" id="p-${o}">0%</div></div>
     `).join('');
 
-    function play(p) {
-        let a = (!st.last || Math.random() < 0.1) 
-            ? opts[Math.floor(Math.random() * 5)] 
-            : getCounter(st.last);
+    function resetAnims() {
+        [dom.pSlot, dom.aSlot, dom.flash].forEach(item => item.className = item.id === 'flash' ? '' : 'battle-slot');
+        void dom.pSlot.offsetWidth; // Trigger reflow
+    }
 
-        // Update Battle Zone Images
+    function play(p) {
+        resetAnims();
+        let a = (!st.last || Math.random() < 0.1) ? opts[Math.floor(Math.random() * 5)] : getCounter(st.last);
+
         dom.pImg.src = `${p}.jpg`; dom.pImg.style.opacity = "1";
         dom.aImg.src = `${a}.jpg`; dom.aImg.style.opacity = "1";
 
@@ -116,13 +144,20 @@
         if (p === a) {
             msg = `TIE! Both chose ${p.toUpperCase()}.`;
             st.s = 0;
+            dom.pImg.style.borderColor = "#334155"; dom.aImg.style.borderColor = "#334155";
         } else if (rules[p].beats.includes(a)) {
             st.p++; st.s++; 
             if (st.s > st.m) st.m = st.s;
             msg = `WIN! ${p.toUpperCase()} ${rules[p].m} ${a.toUpperCase()}.`;
+            dom.pImg.style.borderColor = "#10b981"; dom.aImg.style.borderColor = "#ef4444";
+            dom.pSlot.classList.add('pulse'); dom.aSlot.classList.add('shake');
+            dom.flash.className = 'flash-win';
         } else {
             st.a++; st.s = 0;
             msg = `LOSE! ${a.toUpperCase()} ${rules[a].m} ${p.toUpperCase()}.`;
+            dom.pImg.style.borderColor = "#ef4444"; dom.aImg.style.borderColor = "#10b981";
+            dom.aSlot.classList.add('pulse'); dom.pSlot.classList.add('shake');
+            dom.flash.className = 'flash-lose';
             if (dom.snd) { dom.snd.currentTime = 0; dom.snd.play().catch(()=>{}); }
         }
 
@@ -142,8 +177,7 @@
         let pData = mem[lastMove];
         let predicted = Object.keys(pData).reduce((a, b) => pData[a] > pData[b] ? a : b);
         if (pData[predicted] === 0) return opts[Math.floor(Math.random() * 5)];
-        let counters = opts.filter(c => rules[c].beats.includes(predicted));
-        return counters[Math.floor(Math.random() * counters.length)];
+        return opts.filter(c => rules[c].beats.includes(predicted))[Math.floor(Math.random() * 2)] || opts[0];
     }
 
     function reset() {
@@ -151,7 +185,9 @@
         opts.forEach(o => opts.forEach(n => mem[o][n] = 0));
         ['ps', 'as', 'sc', 'ms'].forEach(id => el(id).innerText = '0');
         dom.res.innerText = "Memory wiped. Make your move...";
-        dom.pImg.style.opacity = "0.2"; dom.aImg.style.opacity = "0.2";
+        dom.pImg.style.opacity = dom.aImg.style.opacity = "0.2";
+        dom.pImg.style.borderColor = dom.aImg.style.borderColor = "#334155";
+        resetAnims();
         opts.forEach(o => { el(`f-${o}`).style.width = '0%'; el(`p-${o}`).innerText = '0%'; });
     }
 </script>
