@@ -3,7 +3,7 @@
 A high-fidelity, mobile-responsive implementation of **Rock, Paper, Scissors, Lizard, Spock** featuring a pattern-recognition AI opponent.
 
 ## 🚀 Live Demo
-[[Insert your GitHub Pages Link Here]](https://janvidaro-hash.github.io/sheldon-rpsls/)
+[[https://janvidaro-hash.github.io/sheldon-rpsls/]()
 
 ## 🧠 Technical Highlights
 - **Markov Chain AI:** The engine doesn't just play randomly; it builds a transition matrix of your gameplay habits to predict and counter your next move.
