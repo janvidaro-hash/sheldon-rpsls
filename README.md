@@ -4,7 +4,7 @@ An adaptive, AI-powered Rock, Paper, Scissors, Lizard, Spock game that learns yo
 
 Originally built as a lightweight responsive web app, this project has evolved into a standalone **native Android application** featuring both single-player AI battles and a Pass-and-Play multiplayer mode.
 
-[🎮 Play the Live Web Version Here](https://your-github-username.github.io/your-repo-name/) *(Remember to update this link!)*
+[🎮 Play the Live Web Version Here]([https://your-github-username.github.io/your-repo-name/](https://janvidaro-hash.github.io/sheldon-rpsls/))
 
 ---
 
