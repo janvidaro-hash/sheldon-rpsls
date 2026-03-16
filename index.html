@@ -5,29 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sheldon Mind Reader: RPSLS</title>
     <style>
-        /* Exact Theme Colors from your Image */
+        /* Theme Colors */
         :root { --bg: #16213e; --panel: #0f172a; --accent: #38bdf8; --gold: #fbbf24; --red: #ef4444; --green: #10b981; }
 
         body { font-family: 'Inter', system-ui, sans-serif; background: #0b1120; color: #f8fafc; margin: 0; padding: 15px; display: flex; align-items: center; justify-content: center; min-height: 100vh; box-sizing: border-box; }
         
         .container { width: 100%; max-width: 600px; background: var(--bg); padding: 30px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,.6); position: relative; border: 1px solid #1e293b; }
 
-        /* Info Icon */
+        /* Top Controls */
         .info-btn { position: absolute; top: 20px; right: 20px; background: none; border: 1px solid var(--accent); color: var(--accent); width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 14px; opacity: 0.7; transition: 0.3s; }
         .info-btn:hover { opacity: 1; background: rgba(56, 189, 248, 0.1); }
 
-        .scoreboard { display: flex; justify-content: center; gap: 40px; font-size: 2.2rem; font-weight: 900; color: var(--accent); margin-top: 10px; }
-        .streak-bar { font-size: 1.1rem; color: var(--green); font-weight: bold; margin: 15px 0; }
+        /* Scoreboard */
+        .scoreboard { display: flex; justify-content: center; gap: 20px; font-size: 2rem; font-weight: 900; color: var(--accent); margin-top: 10px; }
+        .scoreboard div { white-space: nowrap; }
+        
+        .streak-bar { font-size: 1.1rem; color: var(--green); font-weight: bold; margin: 15px 0; text-align: center; }
         .streak-bar span { color: #94a3b8; font-weight: normal; }
+
+        /* Rules Modal */
+        .rules-modal { display: none; text-align: center; background-color: #0f172a; border: 2px solid #38bdf8; border-radius: 15px; padding: 15px 20px; margin-top: 10px; margin-bottom: 20px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); }
+        .rule-item { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.9rem; }
+        .rule-item b { color: #38bdf8; font-weight: bold; }
 
         /* Battle Zone */
         .battle-zone { display: flex; justify-content: center; align-items: center; gap: 25px; margin: 20px 0; }
         .slot { text-align: center; }
         .slot img { width: 90px; height: 90px; border-radius: 15px; border: 2px solid #1e293b; background: var(--panel); opacity: 0.2; transition: 0.3s; padding: 5px; }
         .vs { font-weight: 900; color: var(--red); font-size: 1.4rem; }
-        .label { font-size: 0.7rem; color: #64748b; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .label { font-size: 0.8rem; font-weight: bold; color: #64748b; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; }
 
-        #status-msg { font-size: 1.3rem; font-weight: bold; color: var(--gold); margin: 20px 0; min-height: 1.5em; }
+        #status-msg { font-size: 1.1rem; font-weight: bold; color: var(--gold); margin: 20px 0; min-height: 2.5em; text-align: center; line-height: 1.3; }
 
         /* Neon Buttons */
         .choices { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 30px; }
@@ -35,8 +43,8 @@
         .choice-btn img { width: 70px; height: 70px; display: block; border-radius: 8px; }
         .choice-btn:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(56,189,248,0.3); }
 
-        /* Probability Engine - Matching your Panel */
-        .engine-panel { background: var(--panel); padding: 25px; border-radius: 20px; border: 1px solid #1e293b; text-align: left; }
+        /* Probability Engine */
+        .engine-panel { background: var(--panel); padding: 25px; border-radius: 20px; border: 1px solid #1e293b; text-align: left; transition: 0.3s; }
         .engine-title { text-align: center; font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
         .engine-row { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
         .engine-label { width: 80px; font-size: 0.85rem; color: #94a3b8; font-weight: bold; }
@@ -44,24 +52,26 @@
         .bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .percent { width: 40px; font-size: 0.85rem; color: #94a3b8; text-align: right; }
 
-        /* Reset Button */
-        .reset-btn { width: 100%; margin-top: 25px; padding: 15px; background: none; border: 2px solid var(--red); color: var(--red); border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.3s; }
-        .reset-btn:hover { background: var(--red); color: white; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+        /* Action Buttons */
+        .btn-group { display: flex; gap: 10px; margin-top: 25px; }
+        .action-btn { flex: 1; padding: 15px; background: none; border: 2px solid; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 0.9rem; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;}
+        .mode-btn { border-color: var(--accent); color: var(--accent); }
+        .mode-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 15px rgba(56,189,248,0.4); }
+        .reset-btn { border-color: var(--red); color: var(--red); }
+        .reset-btn:hover { background: var(--red); color: white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
 
-        /* Flash Effects */
+        /* Flash Effects & Animations */
         #fx-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0; }
         .win-fx { background: radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%); animation: flash 0.6s; }
         .lose-fx { background: radial-gradient(circle, rgba(239,68,68,0.2) 0%, transparent 70%); animation: flash 0.6s; }
         @keyframes flash { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 
-        /* Animations for slots */
-        .winner { border-color: var(--green) !important; transform: scale(1.1); box-shadow: 0 0 20px rgba(16,185,129,0.4); }
-        .shaking { animation: shake 0.4s; border-color: var(--red) !important; }
+        .winner { border-color: var(--green) !important; transform: scale(1.1); box-shadow: 0 0 20px rgba(16,185,129,0.4); opacity: 1 !important;}
+        .shaking { animation: shake 0.4s; border-color: var(--red) !important; opacity: 1 !important;}
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 
-        /* Rules Toggle */
-        .rules-modal { display: none; background: #0f172a; border: 1px solid var(--accent); border-radius: 15px; padding: 15px; margin-bottom: 20px; font-size: 0.8rem; text-align: left; }
-        .rules-modal b { color: var(--accent); }
+        /* Conceals P1's move in PvP mode */
+        .hidden-choice { filter: brightness(0) invert(0.1) !important; opacity: 0.8 !important; }
     </style>
 </head>
 <body>
@@ -72,8 +82,8 @@
     <button class="info-btn" onclick="toggleRules()">i</button>
     
     <div class="scoreboard">
-        <div>YOU: <span id="p-score">0</span></div>
-        <div>SHELDON: <span id="a-score">0</span></div>
+        <div><span id="label-score-p1">YOU</span>: <span id="p-score">0</span></div>
+        <div><span id="label-score-p2">SHELDON</span>: <span id="a-score">0</span></div>
     </div>
     
     <div class="streak-bar">
@@ -81,22 +91,22 @@
     </div>
 
     <div class="rules-modal" id="rules-box">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div><b>Rock</b>: Scissors, Lizard</div><div><b>Paper</b>: Rock, Spock</div>
-            <div><b>Scissors</b>: Paper, Lizard</div><div><b>Lizard</b>: Spock, Paper</div>
-            <div style="grid-column: span 2; text-align:center;"><b>Spock</b>: Scissors, Rock</div>
-        </div>
+        <div class="rule-item"><b>Rock</b> beats Scissors, Lizard</div>
+        <div class="rule-item"><b>Paper</b> beats Rock, Spock</div>
+        <div class="rule-item"><b>Scissors</b> beats Paper, Lizard</div>
+        <div class="rule-item"><b>Lizard</b> beats Spock, Paper</div>
+        <div class="rule-item"><b>Spock</b> beats Scissors, Rock</div>
     </div>
 
     <div class="battle-zone">
         <div class="slot">
-            <img id="p-choice-img" src="rock.jpg">
-            <div class="label">YOU</div>
+            <img id="p-choice-img" src="rock.jpg" alt="Player 1">
+            <div class="label" id="label-zone-p1">YOU</div>
         </div>
         <div class="vs">VS</div>
         <div class="slot">
-            <img id="a-choice-img" src="rock.jpg">
-            <div class="label">SHELDON</div>
+            <img id="a-choice-img" src="rock.jpg" alt="Player 2">
+            <div class="label" id="label-zone-p2">SHELDON</div>
         </div>
     </div>
 
@@ -113,25 +123,28 @@
         </script>
     </div>
 
-    <div class="engine-panel">
+    <div class="engine-panel" id="engine-panel">
         <div class="engine-title">Sheldon's Probability Engine</div>
         <div id="engine-ui"></div>
     </div>
 
-    <button class="reset-btn" onclick="resetGame()">Reset Game & Memory</button>
+    <div class="btn-group">
+        <button class="action-btn mode-btn" id="mode-btn" onclick="toggleMode()">MODE: VS HUMAN</button>
+        <button class="action-btn reset-btn" onclick="resetGame()">Reset Game</button>
+    </div>
 </div>
 
 <script>
-    // State & Data
-    const winRules = {
-        rock: ['scissors', 'lizard'], paper: ['rock', 'spock'],
-        scissors: ['paper', 'lizard'], lizard: ['spock', 'paper'], spock: ['scissors', 'rock']
-    };
-    
+    const winRules = { rock: ['scissors', 'lizard'], paper: ['rock', 'spock'], scissors: ['paper', 'lizard'], lizard: ['spock', 'paper'], spock: ['scissors', 'rock'] };
     let memory = {};
     moves.forEach(m => memory[m] = { rock:0, paper:0, scissors:0, lizard:0, spock:0 });
 
     let state = { p: 0, a: 0, s: 0, b: 0, last: null };
+    
+    // Multiplayer Variables
+    let gameMode = 'AI'; // 'AI' or 'HUMAN'
+    let pvpState = 'P1_TURN'; // 'P1_TURN', 'P2_TURN', 'RESULT'
+    let p1Choice = null;
 
     // Init Engine Bars
     document.getElementById('engine-ui').innerHTML = moves.map(m => `
@@ -147,60 +160,121 @@
         rb.style.display = rb.style.display === 'block' ? 'none' : 'block';
     }
 
-    function play(playerMove) {
-        // AI Logic (Markov Chain)
-        let aiMove = (!state.last || Math.random() < 0.1) 
-            ? moves[Math.floor(Math.random() * 5)] 
-            : predictAndCounter(state.last);
+    function toggleMode() {
+        gameMode = gameMode === 'AI' ? 'HUMAN' : 'AI';
+        document.getElementById('mode-btn').innerText = gameMode === 'AI' ? 'MODE: VS HUMAN' : 'MODE: VS SHELDON';
+        document.getElementById('engine-panel').style.display = gameMode === 'AI' ? 'block' : 'none';
+        
+        // Update Labels
+        document.getElementById('label-score-p1').innerText = gameMode === 'AI' ? 'YOU' : 'PLAYER 1';
+        document.getElementById('label-score-p2').innerText = gameMode === 'AI' ? 'SHELDON' : 'PLAYER 2';
+        document.getElementById('label-zone-p1').innerText = gameMode === 'AI' ? 'YOU' : 'PLAYER 1';
+        document.getElementById('label-zone-p2').innerText = gameMode === 'AI' ? 'SHELDON' : 'PLAYER 2';
+        
+        resetGame();
+    }
 
-        // Update Memory
+    function play(move) {
+        if (gameMode === 'AI') {
+            playAI(move);
+        } else {
+            playPVP(move);
+        }
+    }
+
+    function playAI(playerMove) {
+        let aiMove = (!state.last || Math.random() < 0.1) ? moves[Math.floor(Math.random() * 5)] : predictAndCounter(state.last);
         if (state.last) memory[state.last][playerMove]++;
         state.last = playerMove;
 
-        // Visual Reset
+        updateVisuals(playerMove, aiMove);
+        resolveRound(playerMove, aiMove, 'YOU', 'SHELDON');
+        updateEngineUI(playerMove);
+    }
+
+    function playPVP(move) {
+        const msg = document.getElementById('status-msg');
+        
+        if (pvpState === 'RESULT') {
+            resetVisuals();
+            pvpState = 'P1_TURN';
+            msg.innerText = "Player 1's turn. Make your move...";
+            return; 
+        }
+
+        if (pvpState === 'P1_TURN') {
+            p1Choice = move;
+            const pImg = document.getElementById('p-choice-img');
+            pImg.src = `${move}.jpg`;
+            pImg.classList.add('hidden-choice'); // Hide it visually!
+            document.getElementById('a-choice-img').style.opacity = 0.2;
+            
+            msg.innerText = "P1 Locked! 🔒\nPass the device. Player 2, make your move!";
+            pvpState = 'P2_TURN';
+
+        } else if (pvpState === 'P2_TURN') {
+            document.getElementById('p-choice-img').classList.remove('hidden-choice'); // Reveal P1!
+            updateVisuals(p1Choice, move);
+            resolveRound(p1Choice, move, 'PLAYER 1', 'PLAYER 2');
+            msg.innerText += "\n(Click any button to start next round)";
+            pvpState = 'RESULT';
+        }
+    }
+
+    function updateVisuals(m1, m2) {
         const pImg = document.getElementById('p-choice-img');
         const aImg = document.getElementById('a-choice-img');
         const fx = document.getElementById('fx-overlay');
-        pImg.className = aImg.className = ''; pImg.style.opacity = aImg.style.opacity = 1;
+        pImg.className = aImg.className = ''; 
+        pImg.style.opacity = aImg.style.opacity = 1;
         fx.className = ''; void fx.offsetWidth;
+        pImg.src = `${m1}.jpg`;
+        aImg.src = `${m2}.jpg`;
+    }
 
-        pImg.src = `${playerMove}.jpg`;
-        aImg.src = `${aiMove}.jpg`;
+    function resetVisuals() {
+        const pImg = document.getElementById('p-choice-img');
+        const aImg = document.getElementById('a-choice-img');
+        pImg.className = aImg.className = '';
+        pImg.classList.remove('hidden-choice');
+        pImg.style.opacity = aImg.style.opacity = 0.2;
+        document.getElementById('fx-overlay').className = '';
+    }
 
-        // Result Logic
+    function resolveRound(m1, m2, name1, name2) {
+        const pImg = document.getElementById('p-choice-img');
+        const aImg = document.getElementById('a-choice-img');
+        const fx = document.getElementById('fx-overlay');
         let msg = "";
-        if (playerMove === aiMove) {
-            msg = `TIE! Both chose ${playerMove.toUpperCase()}`;
+
+        if (m1 === m2) {
+            msg = `TIE! Both chose ${m1.toUpperCase()}`;
             state.s = 0;
-        } else if (winRules[playerMove].includes(aiMove)) {
+        } else if (winRules[m1].includes(m2)) {
             state.p++; state.s++; 
             if (state.s > state.b) state.b = state.s;
-            msg = `WIN! ${playerMove.toUpperCase()} beats ${aiMove.toUpperCase()}`;
+            msg = `${name1} WINS! ${m1.toUpperCase()} beats ${m2.toUpperCase()}`;
             pImg.classList.add('winner'); aImg.classList.add('shaking');
             fx.className = 'win-fx';
         } else {
             state.a++; state.s = 0;
-            msg = `LOSE! ${aiMove.toUpperCase()} beats ${playerMove.toUpperCase()}`;
+            msg = `${name2} WINS! ${m2.toUpperCase()} beats ${m1.toUpperCase()}`;
             aImg.classList.add('winner'); pImg.classList.add('shaking');
             fx.className = 'lose-fx';
-            new Audio('bazinga.mp3').play().catch(()=>{});
+            if (gameMode === 'AI') new Audio('bazinga.mp3').play().catch(()=>{});
         }
 
-        // Update UI
         document.getElementById('p-score').innerText = state.p;
         document.getElementById('a-score').innerText = state.a;
         document.getElementById('cur-streak').innerText = state.s;
         document.getElementById('best-streak').innerText = state.b;
         document.getElementById('status-msg').innerText = msg;
-
-        updateEngineUI(playerMove);
     }
 
     function predictAndCounter(last) {
         const stats = memory[last];
         const predicted = moves.reduce((a, b) => stats[a] > stats[b] ? a : b);
         if (stats[predicted] === 0) return moves[Math.floor(Math.random() * 5)];
-        // Find a move that beats the predicted move
         return moves.find(m => winRules[m].includes(predicted));
     }
 
@@ -216,18 +290,16 @@
 
     function resetGame() {
         state = { p: 0, a: 0, s: 0, b: 0, last: null };
+        pvpState = 'P1_TURN';
         moves.forEach(m => moves.forEach(next => memory[m][next] = 0));
         
         document.getElementById('p-score').innerText = '0';
         document.getElementById('a-score').innerText = '0';
         document.getElementById('cur-streak').innerText = '0';
         document.getElementById('best-streak').innerText = '0';
-        document.getElementById('status-msg').innerText = "Memory wiped. Make your move...";
+        document.getElementById('status-msg').innerText = gameMode === 'AI' ? "Memory wiped. Make your move..." : "Player 1's turn. Make your move...";
         
-        const pImg = document.getElementById('p-choice-img');
-        const aImg = document.getElementById('a-choice-img');
-        pImg.style.opacity = aImg.style.opacity = 0.2;
-        pImg.className = aImg.className = '';
+        resetVisuals();
 
         moves.forEach(m => {
             document.getElementById(`bar-${m}`).style.width = '0%';
@@ -235,6 +307,5 @@
         });
     }
 </script>
-
 </body>
 </html>
