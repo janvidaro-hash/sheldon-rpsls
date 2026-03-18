@@ -39,9 +39,14 @@
 
         /* Neon Buttons */
         .choices { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 30px; }
-        .choice-btn { background: var(--panel); border: 2px solid #1e293b; border-radius: 12px; padding: 6px; cursor: pointer; transition: 0.2s; }
+        .choice-btn { background: var(--panel); border: 2px solid #1e293b; border-radius: 12px; padding: 6px; cursor: pointer; transition: 0.2s; outline: none; }
         .choice-btn img { width: 70px; height: 70px; display: block; border-radius: 8px; }
-        .choice-btn:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(56,189,248,0.3); }
+        
+        /* Mobile Sticky Hover Fix */
+        @media (hover: hover) {
+            .choice-btn:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 5px 15px rgba(56,189,248,0.3); }
+        }
+        .choice-btn:active { border-color: var(--accent); background: rgba(56,189,248,0.1); }
 
         /* Probability Engine */
         .engine-panel { background: var(--panel); padding: 25px; border-radius: 20px; border: 1px solid #1e293b; text-align: left; transition: 0.3s; }
@@ -175,6 +180,9 @@
     }
 
     function play(move) {
+        // Drop focus instantly to fix mobile sticky-hover bug
+        if (document.activeElement) document.activeElement.blur();
+
         if (gameMode === 'AI') {
             playAI(move);
         } else {
@@ -257,7 +265,8 @@
             pImg.classList.add('winner'); aImg.classList.add('shaking');
             fx.className = 'win-fx';
         } else {
-            state.a++; state.s = 0;
+            if (gameMode === 'AI') state.a++; else state.a++; // Keep track of P2/Sheldon score
+            state.s = 0;
             msg = `${name2} WINS! ${m2.toUpperCase()} beats ${m1.toUpperCase()}`;
             aImg.classList.add('winner'); pImg.classList.add('shaking');
             fx.className = 'lose-fx';
